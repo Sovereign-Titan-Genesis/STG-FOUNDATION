@@ -35,3 +35,13 @@ Karena itu, setiap pengembangan harus memperkuat fondasi, bukan membebaninya. Se
 Dengan membangun STG Foundation, kami tidak hanya menyusun dokumentasi. Kami sedang membangun sistem yang memungkinkan pengetahuan, pengalaman, dan nilai-nilai STG dapat diwariskan, dikembangkan, dan diteruskan oleh generasi berikutnya tanpa kehilangan jati dirinya.
 
 Inilah fondasi yang menjadi sumber kekuatan, ketahanan, dan keberlanjutan seluruh ekosistem Sovereign Titan Genesis.
+
+### Hierarchy of Foundations.
+1.Foundation of Purpose — Mengapa STG ada.
+2.Foundation of Principles — Nilai yang menjadi kompas.
+3.Foundation of Governance — Cara mengambil keputusan.
+4.Foundation of Architecture — Cara seluruh sistem saling terhubung.
+5.Foundation of Engineering — Cara membangun dengan kualitas tinggi.
+6.Foundation of Community — Cara manusia berkolaborasi.
+7.Foundation of Legacy — Cara memastikan STG tetap hidup dan bermanfaat bagi generasi berikutnya.
+
