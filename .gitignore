@@ -236,3 +236,25 @@ typechain-types/
 
 # Coverage
 coverage/
+
+# Node / Hardhat
+node_modules/
+**/node_modules/
+
+# Hardhat build
+artifacts/
+cache/
+
+# Typechain generated
+typechain-types/
+
+# Environment
+.env
+
+# npm
+.npm/
+npm-debug.log*
+package-lock.json
+
+# pnpm
+.pnpm-store/
