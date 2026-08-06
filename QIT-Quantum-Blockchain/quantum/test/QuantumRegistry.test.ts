@@ -41,7 +41,8 @@ describe("QuantumRegistry Genesis v0.1", function () {
 
     await registry.registerContract(
       contractName,
-      fakeAddress
+      fakeAddress,
+  "Genesis-v0.2"
     );
 
 
@@ -81,5 +82,40 @@ describe("QuantumRegistry Genesis v0.1", function () {
     );
 
   });
+
+});
+it("Should store contract metadata", async function () {
+
+  const Registry = await ethers.getContractFactory(
+    "QuantumRegistry"
+  );
+
+  const registry = await Registry.deploy();
+
+  await registry.waitForDeployment();
+
+  const name =
+    ethers.encodeBytes32String("QSTATE_TOKEN");
+
+  const address =
+    "0x0000000000000000000000000000000000000123";
+
+  await registry.registerContract(
+    name,
+    address,
+    "Genesis-v0.2"
+  );
+
+  const info =
+    await registry.getContractInfo(name);
+
+  expect(info.contractAddress)
+    .to.equal(address);
+
+  expect(info.version)
+    .to.equal("Genesis-v0.2");
+
+  expect(info.active)
+    .to.equal(true);
 
 });
