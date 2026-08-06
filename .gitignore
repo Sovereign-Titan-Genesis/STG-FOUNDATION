@@ -216,3 +216,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# QIT Quantum Blockchain / Hardhat
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+
+# Hardhat build files
+artifacts/
+cache/
+typechain-types/
+
+# Environment secrets
+.env
+.env.*
+
+# NPM local config
+.npmrc
+
+# Coverage
+coverage/
