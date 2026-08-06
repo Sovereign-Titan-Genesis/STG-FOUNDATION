@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-describe("QuantumRegistry Genesis v0.1", function () {
+describe("QuantumRegistry Genesis v0.2", function () { 
 
   it("Should set the deployer as owner", async function () {
 
