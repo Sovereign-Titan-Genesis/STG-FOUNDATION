@@ -20,11 +20,17 @@ contract QuantumRegistry {
     mapping(bytes32 => ContractInfo) private registry;
 
 
+ 
+
     event ContractRegistered(
         bytes32 indexed name,
         address indexed contractAddress,
-        string version
+        string version,
+        uint256 timestamp
     );
+
+
+
 
 
     event ContractStatusChanged(
@@ -81,7 +87,8 @@ contract QuantumRegistry {
         emit ContractRegistered(
             name,
             contractAddress,
-            version
+            version,
+block.timestamp
         );
     }
 
