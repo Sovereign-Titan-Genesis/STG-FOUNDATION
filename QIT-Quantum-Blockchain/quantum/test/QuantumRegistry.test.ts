@@ -75,7 +75,8 @@ describe("QuantumRegistry Genesis v0.1", function () {
       .connect(attacker)
       .registerContract(
         contractName,
-        attacker.address
+        attacker.address,
+  "v0.2"
       )
     ).to.be.revertedWith(
       "Not authorized"
