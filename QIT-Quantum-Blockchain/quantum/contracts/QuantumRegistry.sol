@@ -1,163 +1,375 @@
-// SPDX-License-Identifier: MIT
+ // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 /**
  * @title QuantumRegistry
- * @notice Genesis Master Registry with Contract Metadata
- * @dev QIT Quantum Blockchain Foundation Registry
+ * @notice Genesis Master Registry for QIT Quantum Blockchain
+ * @dev Stores contract identity, metadata, lifecycle, governance,
+ *      dependencies and auditable change history.
  */
 contract QuantumRegistry {
 
     address public owner;
 
-    struct ContractInfo {
-        address contractAddress;
-        string version;
-        bool active;
-        uint256 registeredAt;
+    enum Lifecycle {
+        DRAFT,
+        DEVELOPMENT,
+        TESTNET,
+        GENESIS,
+        ACTIVE,
+        MIGRATED,
+        ARCHIVED
     }
 
-    mapping(bytes32 => ContractInfo) private registry;
+    struct ContractRecord {
+        bytes32 registryId;
+        address contractAddress;
+        Lifecycle lifecycle;
+        address owner;
+        address controller;
+        address upgradeAuthority;
+        uint256 createdAt;
+        uint256 updatedAt;
+    }
 
+    struct ContractMetadata {
+        string name;
+        string version;
+        string category;
+        string description;
+    }
 
- 
+    struct AuditEntry {
+        bytes32 registryId;
+        address actor;
+        bytes32 action;
+        bytes32 reason;
+        uint256 timestamp;
+    }
+
+    mapping(bytes32 => ContractRecord) private registry;
+    mapping(bytes32 => ContractMetadata) private metadata;
+    mapping(bytes32 => bytes32[]) private dependencies;
+    mapping(bytes32 => AuditEntry[]) private auditTrail;
 
     event ContractRegistered(
-        bytes32 indexed name,
+        bytes32 indexed registryId,
         address indexed contractAddress,
-        string version,
+        Lifecycle lifecycle,
         uint256 timestamp
     );
 
-
-
-
-
-    event ContractStatusChanged(
-        bytes32 indexed name,
-        bool active
+    event MetadataUpdated(
+        bytes32 indexed registryId,
+        uint256 timestamp
     );
 
+    event LifecycleChanged(
+        bytes32 indexed registryId,
+        Lifecycle previousLifecycle,
+        Lifecycle newLifecycle,
+        uint256 timestamp
+    );
+
+    event GovernanceUpdated(
+        bytes32 indexed registryId,
+        address contractOwner,
+        address controller,
+        address upgradeAuthority,
+        uint256 timestamp
+    );
+
+    event DependencyAdded(
+        bytes32 indexed registryId,
+        bytes32 indexed dependencyRegistryId
+    );
+
+    event AuditRecorded(
+        bytes32 indexed registryId,
+        address indexed actor,
+        bytes32 action,
+        bytes32 reason,
+        uint256 timestamp
+    );
 
     event OwnershipTransferred(
         address indexed previousOwner,
         address indexed newOwner
     );
 
-
     modifier onlyOwner() {
-        require(
-            msg.sender == owner,
-            "Not authorized"
-        );
+        require(msg.sender == owner, "Not authorized");
         _;
     }
-
 
     constructor() {
         owner = msg.sender;
     }
 
-
-    /**
-     * @notice Register or update Genesis contract metadata
-     */
     function registerContract(
-        bytes32 name,
+        bytes32 registryId,
         address contractAddress,
-        string memory version
-    )
-        external
-        onlyOwner
-    {
+        Lifecycle lifecycle,
+        address contractOwner,
+        address controller,
+        address upgradeAuthority
+    ) external onlyOwner {
+        require(
+            registryId != bytes32(0),
+            "Invalid registry ID"
+        );
+
         require(
             contractAddress != address(0),
             "Invalid address"
         );
 
+        require(
+            registry[registryId].createdAt == 0,
+            "Registry ID already exists"
+        );
 
-        registry[name] = ContractInfo({
+        uint256 timestamp = block.timestamp;
+
+        registry[registryId] = ContractRecord({
+            registryId: registryId,
             contractAddress: contractAddress,
-            version: version,
-            active: true,
-            registeredAt: block.timestamp
+            lifecycle: lifecycle,
+            owner: contractOwner,
+            controller: controller,
+            upgradeAuthority: upgradeAuthority,
+            createdAt: timestamp,
+            updatedAt: timestamp
         });
 
+        _recordAudit(
+            registryId,
+            keccak256("CONTRACT_REGISTERED"),
+            keccak256("GENESIS_REGISTRATION")
+        );
 
         emit ContractRegistered(
-            name,
+            registryId,
             contractAddress,
-            version,
-block.timestamp
+            lifecycle,
+            timestamp
         );
     }
 
+    function setContractMetadata(
+        bytes32 registryId,
+        string calldata name,
+        string calldata version,
+        string calldata category,
+        string calldata description
+    ) external onlyOwner {
+        require(
+            registry[registryId].createdAt != 0,
+            "Registry ID not found"
+        );
 
-    /**
-     * @notice Retrieve contract address
-     */
+        metadata[registryId] = ContractMetadata({
+            name: name,
+            version: version,
+            category: category,
+            description: description
+        });
+
+        registry[registryId].updatedAt = block.timestamp;
+
+        _recordAudit(
+            registryId,
+            keccak256("METADATA_UPDATED"),
+            keccak256("METADATA_UPDATE")
+        );
+
+        emit MetadataUpdated(
+            registryId,
+            block.timestamp
+        );
+    }
+
+    function setLifecycle(
+        bytes32 registryId,
+        Lifecycle newLifecycle
+    ) external onlyOwner {
+        ContractRecord storage record = registry[registryId];
+
+        require(
+            record.createdAt != 0,
+            "Registry ID not found"
+        );
+
+        Lifecycle previousLifecycle = record.lifecycle;
+
+        record.lifecycle = newLifecycle;
+        record.updatedAt = block.timestamp;
+
+        _recordAudit(
+            registryId,
+            keccak256("LIFECYCLE_CHANGED"),
+            keccak256("STATE_TRANSITION")
+        );
+
+        emit LifecycleChanged(
+            registryId,
+            previousLifecycle,
+            newLifecycle,
+            block.timestamp
+        );
+    }
+
+    function setGovernance(
+        bytes32 registryId,
+        address contractOwner,
+        address controller,
+        address upgradeAuthority
+    ) external onlyOwner {
+        ContractRecord storage record = registry[registryId];
+
+        require(
+            record.createdAt != 0,
+            "Registry ID not found"
+        );
+
+        record.owner = contractOwner;
+        record.controller = controller;
+        record.upgradeAuthority = upgradeAuthority;
+        record.updatedAt = block.timestamp;
+
+        _recordAudit(
+            registryId,
+            keccak256("GOVERNANCE_UPDATED"),
+            keccak256("AUTHORITY_UPDATE")
+        );
+
+        emit GovernanceUpdated(
+            registryId,
+            contractOwner,
+            controller,
+            upgradeAuthority,
+            block.timestamp
+        );
+    }
+
+    function addDependency(
+        bytes32 registryId,
+        bytes32 dependencyRegistryId
+    ) external onlyOwner {
+        require(
+            registry[registryId].createdAt != 0,
+            "Registry ID not found"
+        );
+
+        require(
+            registry[dependencyRegistryId].createdAt != 0,
+            "Dependency not found"
+        );
+
+        require(
+            registryId != dependencyRegistryId,
+            "Self dependency"
+        );
+
+        dependencies[registryId].push(dependencyRegistryId);
+
+        registry[registryId].updatedAt = block.timestamp;
+
+        _recordAudit(
+            registryId,
+            keccak256("DEPENDENCY_ADDED"),
+            dependencyRegistryId
+        );
+
+        emit DependencyAdded(
+            registryId,
+            dependencyRegistryId
+        );
+    }
+
     function getContract(
-        bytes32 name
+        bytes32 registryId
+    ) external view returns (address) {
+        return registry[registryId].contractAddress;
+    }
+
+    function getContractRecord(
+        bytes32 registryId
     )
         external
         view
-        returns(address)
+        returns (ContractRecord memory)
     {
-        return registry[name].contractAddress;
+        require(
+            registry[registryId].createdAt != 0,
+            "Registry ID not found"
+        );
+
+        return registry[registryId];
     }
 
-
-    /**
-     * @notice Retrieve full metadata
-     */
-    function getContractInfo(
-        bytes32 name
+    function getContractMetadata(
+        bytes32 registryId
     )
         external
         view
-        returns(
-            address contractAddress,
-            string memory version,
-            bool active,
-            uint256 registeredAt
-        )
+        returns (ContractMetadata memory)
     {
-        ContractInfo memory info = registry[name];
-
-        return (
-            info.contractAddress,
-            info.version,
-            info.active,
-            info.registeredAt
+        require(
+            registry[registryId].createdAt != 0,
+            "Registry ID not found"
         );
+
+        return metadata[registryId];
     }
 
-
-    /**
-     * @notice Enable or disable registered contract
-     */
-    function setContractStatus(
-        bytes32 name,
-        bool status
+    function getDependencies(
+        bytes32 registryId
     )
         external
-        onlyOwner
+        view
+        returns (bytes32[] memory)
     {
-        registry[name].active = status;
-
-        emit ContractStatusChanged(
-            name,
-            status
-        );
+        return dependencies[registryId];
     }
 
+    function getAuditTrail(
+        bytes32 registryId
+    )
+        external
+        view
+        returns (AuditEntry[] memory)
+    {
+        return auditTrail[registryId];
+    }
+
+    function _recordAudit(
+        bytes32 registryId,
+        bytes32 action,
+        bytes32 reason
+    ) internal {
+        auditTrail[registryId].push(
+            AuditEntry({
+                registryId: registryId,
+                actor: msg.sender,
+                action: action,
+                reason: reason,
+                timestamp: block.timestamp
+            })
+        );
+
+        emit AuditRecorded(
+            registryId,
+            msg.sender,
+            action,
+            reason,
+            block.timestamp
+        );
+    }
 
     function transferOwnership(
         address newOwner
-    )
-        external
-        onlyOwner
-    {
+    ) external onlyOwner {
         require(
             newOwner != address(0),
             "Invalid owner"
