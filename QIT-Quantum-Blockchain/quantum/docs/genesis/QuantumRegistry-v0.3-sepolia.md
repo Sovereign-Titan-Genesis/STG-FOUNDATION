@@ -48,6 +48,19 @@ Audit trail entries verified:
 
 `3`
 
+## Explorer Verification
+
+- Etherscan verification: PASS
+- Explorer:
+  https://sepolia.etherscan.io/address/0x5A0228989eEAc801B7fc73c2919732639Df7F573#code
+
+## Git Baseline
+
+- Commit: b61d96a
+- Branch: main
+- Repository state: CLEAN
+- origin/main: synchronized
+
 ## Notes
 
 This deployment is a Sepolia testnet deployment and is not a Mainnet Genesis deployment.
