@@ -1,6 +1,10 @@
 import { ethers } from "hardhat";
 
-const REGISTRY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS;
+
+if (!REGISTRY_ADDRESS) {
+  throw new Error("REGISTRY_ADDRESS is required");
+}
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -8,7 +12,7 @@ async function main() {
   const Registry = await ethers.getContractFactory("QuantumRegistry");
   const registry = Registry.attach(REGISTRY_ADDRESS);
 
-  console.log("=== QUANTUM REGISTRY LOCAL HANDSHAKE ===");
+  console.log("=== QUANTUM REGISTRY HANDSHAKE ===");
   console.log("Registry :", REGISTRY_ADDRESS);
   console.log("Deployer :", deployer.address);
 
@@ -80,11 +84,11 @@ async function main() {
   console.log("Entries  :", audit.length);
   console.log("Audit    : OK");
 
-  console.log("\n=== LOCAL HANDSHAKE SUCCESS ===");
+  console.log("\n=== HANDSHAKE SUCCESS ===");
 }
 
 main().catch((error) => {
-  console.error("\n=== LOCAL HANDSHAKE FAILED ===");
+  console.error("\n=== HANDSHAKE FAILED ===");
   console.error(error);
   process.exitCode = 1;
 });
